@@ -1,0 +1,82 @@
+{
+    "name": "fmtod/sms-communications",
+    "description": "Laravel SMS Communications",
+    "keywords": [
+        "FmTod",
+        "laravel",
+        "sms-communications"
+    ],
+    "homepage": "https://github.com/fmtod/sms-communications",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mikhail",
+            "email": "leathasmail@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "illuminate/contracts": "^8.0|^9.0",
+        "inertiajs/inertia-laravel": "^0.6.4",
+        "netflie/whatsapp-cloud-api": "^2.0",
+        "propaganistas/laravel-phone": "^4.4",
+        "spatie/laravel-data": "^2.0",
+        "spatie/laravel-package-tools": "^1.13.0",
+        "vonage/client": "^3.0"
+    },
+    "require-dev": {
+        "roave/security-advisories": "dev-latest",
+        "laravel/pint": "^1.0",
+        "nunomaduro/collision": "^6.0",
+        "nunomaduro/larastan": "^2.0.1",
+        "orchestra/testbench": "^7.0",
+        "pestphp/pest": "^1.21",
+        "pestphp/pest-plugin-laravel": "^1.1",
+        "pestphp/pest-plugin-parallel": "^1.2",
+        "phpstan/extension-installer": "^1.1",
+        "phpstan/phpstan-deprecation-rules": "^1.0",
+        "phpstan/phpstan-phpunit": "^1.0",
+        "phpunit/phpunit": "^9.5",
+        "roave/security-advisories": "dev-latest",
+        "spatie/laravel-ray": "^1.26"
+    },
+    "autoload": {
+        "psr-4": {
+            "FmTod\\SmsCommunications\\": "src",
+            "FmTod\\SmsCommunications\\Database\\Factories\\": "database/factories/",
+            "FmTod\\SmsCommunications\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "FmTod\\SmsCommunications\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": "@php ./vendor/bin/testbench package:discover --ansi",
+        "analyse": "vendor/bin/phpstan analyse",
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/pint"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "FmTod\\SmsCommunications\\SmsCommunicationsServiceProvider"
+            ],
+            "aliases": {
+                "SmsCommunications": "FmTod\\SmsCommunications\\Facades\\SmsCommunications"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

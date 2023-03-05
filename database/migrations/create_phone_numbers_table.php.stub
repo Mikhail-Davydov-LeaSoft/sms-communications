@@ -1,0 +1,33 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    use \FmTod\SmsCommunications\Traits\ConfigurableConnection;
+
+    public function up()
+        {
+            Schema::connection($this->connectionName())->create($this->table('phone_number'), function (Blueprint $table) {
+               $table->id();
+               $table->foreignId('contact_id')
+                   ->nullable()
+                   ->constrained('contacts')
+                   ->onUpdate('cascade')
+                   ->onDelete('cascade');
+               $table->string('value');
+               $table->boolean('is_landline')->default(false);
+               $table->boolean('can_receive_text')->default(false);
+               $table->boolean('has_whatsapp')->default(false);
+               $table->timestamp('blocked_at', $precision = 0)->nullable();
+               $table->timestamps();
+            });
+        }
+
+        public function down()
+        {
+            Schema::connection($this->connectionName())->dropIfExists($this->table('phone_number'));
+        }
+};
