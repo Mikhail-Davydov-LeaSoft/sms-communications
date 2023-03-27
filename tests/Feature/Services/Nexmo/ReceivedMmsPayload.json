@@ -1,0 +1,12 @@
+{
+    "channel": "mms",
+    "message_uuid": "MESSAGE_ID",
+    "to": "TO_NUMBER",
+    "from": "FROM_NUMBER",
+    "timestamp": "2020-01-01T14:00:00.000Z",
+    "client_ref": "string",
+    "message_type": "image",
+    "image": {
+        "url": "https://example.com/image.jpg"
+    }
+}

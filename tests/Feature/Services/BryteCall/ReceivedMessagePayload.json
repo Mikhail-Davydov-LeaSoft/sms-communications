@@ -1,0 +1,12 @@
+{
+    "MessageID": "abc123xyz",
+    "ConversationID": "xyz321cba",
+    "ToNumber": "TO_NUMBER",
+    "FromNumber": "FROM_NUMBER",
+    "MessageBody": "Hello, world!",
+    "MessageDirection": "in",
+    "TextableUserID": "lmnopqrstuv",
+    "ContactName": "John Doe",
+    "ContactEmail": "john.doe@gmail.com",
+    "Media": []
+}
