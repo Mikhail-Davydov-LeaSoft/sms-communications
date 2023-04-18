@@ -11,6 +11,7 @@ use FmTod\SmsCommunications\Services\Nexmo;
 use FmTod\SmsCommunications\Services\NexmoCredentials;
 use FmTod\SmsCommunications\Services\WhatsApp;
 use FmTod\SmsCommunications\Services\WhatsAppCredentials;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
 trait SmsServiceTrait
@@ -18,9 +19,9 @@ trait SmsServiceTrait
     public function getService(Account $account): ProcessesSMS
     {
         return match ($account->name) {
-            'nexmo' => new Nexmo(NexmoCredentials::from($account->credentials)),
-            'brytecall' => new BryteCall(BryteCallCredentials::from($account->credentials)),
-            'whatsapp' => new WhatsApp(WhatsAppCredentials::from($account->credentials)),
+            'nexmo' => Nexmo::make(NexmoCredentials::from($account->credentials)),
+            'brytecall' => BryteCall::make(BryteCallCredentials::from($account->credentials)),
+            'whatsapp' => WhatsApp::make(WhatsAppCredentials::from($account->credentials)),
             default => throw new InvalidServiceAccount('Provided account does not have a valid service'),
         };
     }
@@ -55,9 +56,10 @@ trait SmsServiceTrait
     {
         $folder = config('sms-communications.mms.path');
         $storage = config('sms-communications.mms.disk');
-        $filename = basename($url);
+        $urlData = explode('/', parse_url($url, PHP_URL_PATH));
+        $filename = end($urlData);
 
-        $result = Storage::disk($storage)->put("$folder/$filename", file_get_contents($url));
+        $result = Storage::disk($storage)->put("$folder/$filename", Http::get($url)->body());
 
         return $result ? $filename : false;
     }

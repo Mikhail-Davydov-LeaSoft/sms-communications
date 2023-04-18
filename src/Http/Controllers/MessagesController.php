@@ -16,6 +16,7 @@ use FmTod\SmsCommunications\Traits\SmsServiceTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class MessagesController extends Controller
 {
@@ -44,7 +45,7 @@ class MessagesController extends Controller
                 ]
             );
         } catch (CouldNotSendMessage $e) {
-            throw new CouldNotSendMessage('Message was not sent due to an error '.$e->getMessage(), $e);
+            throw new CouldNotSendMessage($e->getMessage(), $e);
         }
 
         $message = new Message();
@@ -62,6 +63,7 @@ class MessagesController extends Controller
             $message->file_name = $fileName;
         }
         $message->save();
+        $message->user = Auth::user();
 
         return response()->json($message);
     }
@@ -102,6 +104,7 @@ class MessagesController extends Controller
             $newMessage->file_name = $message->file_name;
         }
         $newMessage->save();
+        $message->user = Auth::user();
 
         return response()->json($newMessage);
     }

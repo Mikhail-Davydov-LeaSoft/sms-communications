@@ -1,8 +1,8 @@
 <template>
     <div class="d-flex flex-column overflow-hidden h-100 wrap">
-        <div class="d-flex justify-content-between p-3 border-top border-bottom">
-            <div class="d-flex align-self-center">
-                <div class="font-weight-bold mr-5" style="font-size: 22px">
+        <div class="d-flex justify-content-between py-3 border-top border-bottom">
+            <div class="d-flex align-self-baseline">
+                <div class="font-weight-bold mr-2" style="font-size: 22px">
                     <template v-if="conversation.phone_number.contact">
                         {{conversation.phone_number.contact.name}}
                     </template>
@@ -20,19 +20,19 @@
                         <span class="text-danger">Unblock</span>
                     </template>
                 </div>
-                <div class="py-1 text-success mr-4" type='button' @click="selectedMode = !selectedMode; resetSelected();">
+                <div class="py-1 text-success mr-3" type='button' @click="selectedMode = !selectedMode; resetSelected();">
                     <img class="" :src="getIconUrl('select_messages.png')" width="20" height="20">
                     <span v-if="!selectedMode">Select messages</span>
                     <span v-else>Clear selection</span>
                 </div>
-                <div v-if="selectedMode" class="py-1 mr-4">
+                <div v-if="selectedMode" class="py-1 mr-3">
                     <span>{{numberSelectedMessages}}</span>
                     <span v-if="numberSelectedMessages > 1 || numberSelectedMessages == 0">Messages</span>
                     <span v-else>Message</span>
                 </div>
-                <button v-if="selectedMode" :disabled="numberSelectedMessages == 0" class="msgButton deleteButton py-1" @click="deleteMessages">Delete</button>
-                <button v-if="selectedMode" :disabled="numberSelectedMessages == 0" class="msgButton unreadButton py-1" @click="unreadMessages">Unread</button>
-                <button v-if="selectedMode" :disabled="numberSelectedMessages == 0" class="msgButton pinButton py-1" @click="pinMessages">Pin</button>
+                <button v-if="selectedMode" :disabled="numberSelectedMessages == 0" class="msgButton deleteButton py-1 align-self-baseline" @click="deleteMessages">Delete</button>
+                <button v-if="selectedMode" :disabled="numberSelectedMessages == 0" class="msgButton unreadButton py-1 align-self-baseline" @click="unreadMessages">Unread</button>
+                <button v-if="selectedMode" :disabled="numberSelectedMessages == 0" class="msgButton pinButton py-1 align-self-baseline" @click="pinMessages">Pin</button>
             </div>
             <div class="d-flex ml-4">
                 <div>
@@ -75,7 +75,7 @@
             >
             </view-attachment-modal>
         </div>
-        <div v-if="conversation.phone_number.blocked_at === null" class="type_msg fixed-bottom offset-3">
+        <div v-if="conversation.phone_number.blocked_at === null" class="type_msg fixed-bottom offset-4">
             <div class="input_msg_write mb-3 ml-3">
                 <div class="row" ref="picker">
                     <Picker
@@ -120,10 +120,11 @@ import type { MessageData } from "../Interfaces/MessageData";
 import { Link } from "@inertiajs/inertia-vue";
 import { Inertia } from '@inertiajs/inertia'
 import UseChatDataConverting  from '../Helpers/useChatDataConverting'
-import {ref, reactive, computed, watch, nextTick} from 'vue'
+import {ref, reactive, computed, watch, nextTick, onUpdated, onMounted} from 'vue'
 import axios from 'axios';
 import {AccountPhoneNumber} from "../Interfaces/AccountPhoneNumber";
 import AttachmentModal from "../Components/AttachmentModal.vue";
+import ViewAttachmentModal from "../Components/ViewAttachmentModal.vue";
 import Message from "../Components/Message.vue";
 import useKeyDown from "../Composables/use-keydown";
 
@@ -161,7 +162,6 @@ useKeyDown([
     {'key': 'Escape', 'fn': () => { isPickerVisible.value = false; }}, // Emits 'closeModal' event on Escape button
 ]);
 
-
 interface PhoneNumbersData {
     value: number;
     text: string;
@@ -180,6 +180,8 @@ const getPinnedMessages = computed(() => {
     pinnedMessages.value = props.conversation.messages?.filter((message: MessageData) => message.is_pinned)
     return pinnedMessages.value
 });
+
+const emit = defineEmits(['updateConversationsOrdering'])
 
 function setMessageComponents(id: number, component: InstanceType<typeof Message>) {
     messageComponents.value[id] = component;
@@ -256,14 +258,12 @@ function displayMessage(message: MessageData) {
         body: message.body,
         user_id: message.user_id,
         created_at: message.created_at,
-        updated_at: message.updated_at
+        updated_at: message.updated_at,
+        user: message.user,
     });
     msgData.value = '';
-
-    nextTick(() => {
-        let element = document.getElementById('correspondence');
-        element!.scrollTop = element!.scrollHeight;
-    })
+    scrollToBottom();
+    emit('updateConversationsOrdering', props.conversation.id);
 }
 
 function displayError(error: string) {
@@ -390,9 +390,27 @@ function unpinMessage(id: number) {
     });
 }
 
+watch(() => props.conversation, (newVal, oldVal) => {
+    if (newVal?.id === oldVal?.id) {
+        return;
+    }
+    setTimeout(() => {
+        scrollToBottom()
+    }, 0);
+}, { immediate: true});
+
 function scrollToMessage(id: number) {
     messageComponents.value[id].scrollToMessage();
 }
+const scrollToBottom = function ()  {
+    nextTick(() => {
+        let element = document.getElementById('correspondence');
+        if(!element) return;
+        element.scrollTop = element.scrollHeight;
+    });
+}
+
+defineExpose({scrollToBottom});
 
 </script>
 

@@ -3,7 +3,9 @@
 use FmTod\SmsCommunications\DataTransferObjects\MessageData;
 use FmTod\SmsCommunications\Http\Controllers\MessagesController;
 use FmTod\SmsCommunications\Services\WhatsApp;
+use FmTod\SmsCommunications\Traits\SmsServiceTrait;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Mockery\MockInterface;
 use function Pest\Laravel\assertDatabaseHas;
@@ -57,4 +59,46 @@ it('can send mms', function () {
     assertDatabaseHas('messages', [
         'id' => $response->getOriginalContent()->id,
     ]);
+});
+
+it('can upload a file from url', function () {
+    // Arrange
+    $trait = new class
+    {
+        use SmsServiceTrait;
+    };
+
+    $file = UploadedFile::fake()->image('mms_image.jpg');
+    $disk = config('sms-communications.mms.disk');
+    $directory = config('sms-communications.mms.path');
+    $filename = 'image.jpg';
+
+    Storage::fake($disk);
+    Http::fake(fn () => Http::response($file->getContent(), headers: ['Content-Type' => 'image/jpeg']));
+
+    // Act
+    $trait->uploadFileFromUrl("https://example.com/$filename");
+
+    // Assert
+    Storage::disk($disk)->assertExists("$directory/image.jpg");
+});
+
+it('can upload a file from request', function () {
+    // Arrange
+    $trait = new class
+    {
+        use SmsServiceTrait;
+    };
+
+    $disk = config('sms-communications.mms.disk');
+    $directory = config('sms-communications.mms.path');
+    $file = UploadedFile::fake()->image('mms_image.jpg');
+
+    Storage::fake($disk);
+
+    // Act
+    $filename = $trait->uploadFile($file);
+
+    // Assert
+    Storage::disk($disk)->assertExists("$directory/$filename");
 });

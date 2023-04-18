@@ -13,7 +13,7 @@ return [
             'brytecall' => FmTod\SmsCommunications\Jobs\Webhooks\BryteCallProcessWebhook::class,
             'whatsapp' => FmTod\SmsCommunications\Jobs\Webhooks\WhatsAppProcessWebhook::class,
         ],
-        'whatsapp_hub_verify_token' => 'DGmlq;4ds[[fdsfdsfqjewwDFSdfjJHGJFgcxmzjdgwfmglfd',
+        'whatsapp_hub_verify_token' => env('WHATSAPP_HUB_VERIFY_TOKEN'),
     ],
     'endpoints' => [
         'whatsapp' => 'https://graph.facebook.com/v15.0',
@@ -51,4 +51,5 @@ return [
      * Laravel's database.default will be used instead.
      */
     'database_connection' => env('SMS_COMMUNICATIONS_DB_CONNECTION'),
+    'nexmo_app_id' => env('NEXMO_APP_ID'),
 ];

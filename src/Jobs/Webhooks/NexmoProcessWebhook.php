@@ -7,68 +7,62 @@ use FmTod\SmsCommunications\Models\AccountPhoneNumber;
 use FmTod\SmsCommunications\Models\Conversation;
 use FmTod\SmsCommunications\Models\Message;
 use FmTod\SmsCommunications\Models\PhoneNumber;
-use FmTod\SmsCommunications\Services\Nexmo;
-use FmTod\SmsCommunications\Services\NexmoCredentials;
 use Illuminate\Http\Request;
 
 class NexmoProcessWebhook extends ProcessWebhookJob
 {
     private \Vonage\Message\InboundMessage|\Vonage\SMS\Webhook\InboundSMS $message;
 
+    private array $requestData;
+
     public function __construct(Request $request)
     {
-        $requestData = $request->all();
-
-        if (! empty($requestData['channel']) && $requestData['channel'] === 'mms') {
-            $this->message = new \Vonage\Message\InboundMessage($requestData['message_uuid']);
-
-            $this->message->fromArray([
-                'from' => $requestData['from'],
-                'to' => $requestData['to'],
-                'type' => $requestData['channel'] == 'sms' ? 'text' : $requestData['message_type'],
-                'body' => $requestData['text'] ?? '',
-                'file_url' => $requestData['channel'] == 'mms' ? $requestData[$requestData['message_type']]['url'] : '',
-            ]);
-        } else {
-            $this->message = new \Vonage\SMS\Webhook\InboundSMS($requestData);
-        }
+        $this->requestData = $request->all();
     }
 
     public function handle(): void
     {
+        if (! empty($this->requestData['channel']) && $this->requestData['channel'] === 'mms') {
+            $this->message = new \Vonage\Message\InboundMessage($this->requestData['message_uuid']);
+
+            $this->message->fromArray([
+                'from' => $this->requestData['from'],
+                'to' => $this->requestData['to'],
+                'type' => $this->requestData['channel'] == 'sms' ? 'text' : $this->requestData['message_type'],
+                'body' => $this->requestData['text'] ?? '',
+                'file_url' => $this->requestData['channel'] == 'mms' ? $this->requestData[$this->requestData['message_type']]['url'] : '',
+            ]);
+        } else {
+            $this->message = new \Vonage\SMS\Webhook\InboundSMS($this->requestData);
+        }
+
+        $from = '+'.$this->message->getFrom();
+        $to = '+'.$this->message->getTo();
+
         if ($this->message instanceof \Vonage\Message\InboundMessage) {
             // Messages API
-            $accountIds = AccountPhoneNumber::where('value', $this->message->getTo())->get()->pluck('account_id');
+            $accountIds = AccountPhoneNumber::where('value', $to)->get()->pluck('account_id');
             $account = Account::where('name', 'nexmo')->whereIn('id', $accountIds)->first();
 
-            $credentials = NexmoCredentials::from($account->credentials);
-            $phoneNumber = PhoneNumber::where('value', '=', $this->message->getFrom())->first();
-            $from = $this->message->getFrom();
+            $phoneNumber = PhoneNumber::where('value', '=', $from)->first();
         } else {
             // SMS API
             $account = Account::where('name', 'nexmo')
                               ->where('credentials', 'like', '%"api_key":"'.$this->message->getApiKey().'"%')
                               ->first();
-            $credentials = NexmoCredentials::from($account->credentials);
-            $phoneNumber = PhoneNumber::where('value', '=', $this->message->getMsisdn())->first();
 
-            $from = $this->message->getMsisdn();
+            $phoneNumber = PhoneNumber::where('value', '=', $from)->first();
         }
 
-        $accountPhoneNumber = AccountPhoneNumber::where('value', $this->message->getTo())
+        $accountPhoneNumber = AccountPhoneNumber::where('value', $to)
                                                 ->where('account_id', $account->id)
                                                 ->first();
-
         // Store PhoneNumber
         if (empty($phoneNumber)) {
-            $service = new Nexmo($credentials);
-            $numberStandartData = $service->getStandardNumberInsight($from);
-            $numberData = $service->getNumberData($from);
-
             $phoneNumber = new PhoneNumber();
             $phoneNumber->value = $from;
-            $phoneNumber->is_landline = in_array($numberStandartData->getCurrentCarrier()['network_type'], ['landline', 'landline_premium', 'landline_tollfree']) ? true : false;
-            $phoneNumber->can_receive_text = in_array('SMS', $numberData['features']) ? true : false;
+            $phoneNumber->is_landline = false;
+            $phoneNumber->can_receive_text = true;
             $phoneNumber->has_whatsapp = false; // TODO Should be check account type (like business or not)
 
             $phoneNumber->save();
@@ -93,7 +87,8 @@ class NexmoProcessWebhook extends ProcessWebhookJob
             $message = new Message();
             $message->conversation_id = $conversation->id;
             $message->message_type = $this->message->getType();
-            if ($message->message_type == 'text') {
+
+            if ($this->message->getType() == 'text') {
                 $message->body = $this->message->getText();
             } else {
                 $file_name = $this->uploadFileFromUrl($this->message->toArray()['file_url']);
@@ -104,5 +99,10 @@ class NexmoProcessWebhook extends ProcessWebhookJob
             $message->service_message_id = $this->message->getMessageId();
             $message->save();
         }
+    }
+
+    public function setRequestData(array $requestData): void
+    {
+        $this->requestData = $requestData;
     }
 }

@@ -1,3 +1,4 @@
+import {User} from "./User";
 export interface MessageData {
     id: number
     conversation_id: number
@@ -11,5 +12,6 @@ export interface MessageData {
     body: string|null
     user_id: number|null
     created_at: string
-    updated_at: string
+    updated_at: string,
+    user?: User
 }

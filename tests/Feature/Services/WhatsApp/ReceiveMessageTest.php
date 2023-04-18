@@ -2,6 +2,7 @@
 
 use FmTod\SmsCommunications\Jobs\Webhooks\WhatsAppProcessWebhook;
 use Illuminate\Support\Facades\Bus;
+use Mockery\MockInterface;
 use function Pest\Laravel\assertDatabaseHas;
 
 beforeEach(function () {
@@ -17,14 +18,32 @@ it('is dispatched', function () {
     Bus::assertDispatched(WhatsAppProcessWebhook::class);
 });
 
-it('stores the incoming message', function () {
-    $json = str_replace('BUSINESS_DISPLAY_PHONE_NUMBER', str_replace('+', '', $this->accountPhoneNumber->value->formatE164()), file_get_contents(__DIR__.'/ReceivedMessagePayload.json'));
+it('stores the incoming SMS', function () {
+    $json = str_replace('BUSINESS_DISPLAY_PHONE_NUMBER', str_replace('+', '', $this->accountPhoneNumber->value->formatE164()), file_get_contents(__DIR__.'/ReceivedSmsPayload.json'));
     $payload = json_decode($json, true);
     $response = $this->postJson("v1/client/webhooks/inbound-message/{$this->service}", $payload);
 
     assertDatabaseHas('messages', [
         'service_message_id' => $this->serviceMessageId,
         'body' => 'WhatsApp webhook message text',
+    ]);
+});
+
+it('stores the incoming MMS', function () {
+    $json = str_replace('BUSINESS_DISPLAY_PHONE_NUMBER', str_replace('+', '', $this->accountPhoneNumber->value->formatE164()), file_get_contents(__DIR__.'/ReceivedMmsPayload.json'));
+    $payload = json_decode($json, true);
+
+    $job = $this->partialMock(WhatsAppProcessWebhook::class, function (MockInterface $mock) {
+        $mock->shouldReceive('getUploadedFileName')->once()
+             ->andReturn("{$this->service}_mms.jpg");
+    });
+
+    $job->setRequestData($payload);
+    $job->handle();
+
+    assertDatabaseHas('messages', [
+        'service_message_id' => $this->serviceMessageId,
+        'file_name' => "{$this->service}_mms.jpg",
     ]);
 });
 

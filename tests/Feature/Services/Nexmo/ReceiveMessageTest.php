@@ -57,16 +57,17 @@ it('stores the incoming MMS', function () {
     $json = str_replace($search, $replace, file_get_contents(__DIR__.'/ReceivedMmsPayload.json'));
     $payload = json_decode($json, true);
 
-    $mock = $this->partialMock(NexmoProcessWebhook::class, function (MockInterface $mock) {
+    $job = $this->partialMock(NexmoProcessWebhook::class, function (MockInterface $mock) {
         $mock->shouldReceive('uploadFileFromUrl')->once()
-        ->andReturn("{$this->service}_image.jpg");
+        ->andReturn("{$this->service}_mms.jpg");
     });
 
-    $response = $this->postJson("v1/client/webhooks/inbound-message/{$this->service}", $payload);
+    $job->setRequestData($payload);
+    $job->handle();
 
     assertDatabaseHas('messages', [
         'service_message_id' => $this->serviceMessageId,
-        'file_name' => 'brytecall_image.jpg',
+        'file_name' => "{$this->service}_mms.jpg",
     ]);
 
     assertDatabaseHas('phone_numbers', [

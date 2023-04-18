@@ -12,6 +12,11 @@ class Conversation extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'phone_number_id',
+        'account_phone_number_id',
+    ];
+
     /**
      * Create a new factory instance for the model.
      *

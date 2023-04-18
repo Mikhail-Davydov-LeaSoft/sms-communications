@@ -13,6 +13,12 @@ class Message extends Model
 
     protected $fillable = [
         'is_unread',
+        'conversation_id',
+        'is_incoming',
+        'service_message_id',
+        'message_type',
+        'body',
+        'file_name',
     ];
 
     protected $casts = [
