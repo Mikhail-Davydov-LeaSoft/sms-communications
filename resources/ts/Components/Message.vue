@@ -41,9 +41,19 @@
                             <template v-else-if="message.message_type == 'image'">
                                 <a @click="openViewAttachModal(message)"><img :src="getMmsUrl(message.file_name)" width="300" /></a>
                             </template>
-                            <template v-else-if="message.message_type == 'video'"></template>
-                            <template v-else-if="message.message_type == 'audio'"></template>
-                            <template v-else></template>
+                            <template v-else-if="message.message_type == 'video'">
+                                <video width="300" controls>
+                                    <source :src="getMmsUrl(message.file_name)">
+                                </video>
+                            </template>
+                            <template v-else-if="message.message_type == 'audio'">
+                                <audio controls>
+                                    <source :src="getMmsUrl(message.file_name)" >
+                                </audio>
+                            </template>
+                            <template v-else-if="message.message_type == 'document'">
+                                File: <a :href="getMmsUrl(message.file_name)">{{message.file_name}}</a>
+                            </template>
                         </div>
                     </div>
                 </div>
@@ -75,7 +85,7 @@
                             <a @click="openViewAttachModal(message)"><img :src="getMmsUrl(message.file_name)" width="300" /></a>
                         </template>
                         <template v-else-if="message.message_type == 'video'">
-                            <video width="300" height="240" controls>
+                            <video width="300" controls>
                                 <source :src="getMmsUrl(message.file_name)">
                             </video>
                         </template>

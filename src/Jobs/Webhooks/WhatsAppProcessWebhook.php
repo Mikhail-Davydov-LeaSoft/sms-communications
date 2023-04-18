@@ -9,10 +9,10 @@ use FmTod\SmsCommunications\Models\Message;
 use FmTod\SmsCommunications\Models\PhoneNumber;
 use FmTod\SmsCommunications\Services\WhatsAppCredentials;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
 use Netflie\WhatsAppCloudApi\WebHook;
 use Netflie\WhatsAppCloudApi\WebHook\Notification\Media;
 use Netflie\WhatsAppCloudApi\WebHook\Notification\MessageNotification;
@@ -82,7 +82,7 @@ class WhatsAppProcessWebhook extends ProcessWebhookJob
     private function receiveMessage(MessageNotification $notification): void
     {
         $accountPhoneNumber = AccountPhoneNumber::where('value', '+'.$notification->businessPhoneNumber())
-            ->withWhereHas('account', fn (Builder $query) => $query->where('name', 'whatsapp'))
+            ->withWhereHas('account', fn (Builder|BelongsTo $query) => $query->where('name', 'whatsapp'))
             ->firstOrFail();
 
         $this->credentials = WhatsAppCredentials::from($accountPhoneNumber->account->credentials);
@@ -111,13 +111,8 @@ class WhatsAppProcessWebhook extends ProcessWebhookJob
         ]);
 
         if ($notification instanceof Media) {
-            $media = $this->getMediaById($notification->imageId());
             $mimeType = explode('/', $notification->mimeType());
-
-            $file = Http::withToken($this->credentials->accessToken)->get($media->url);
-
-            $fileName = 'whatsapp_'.$conversation->id.'_'.uniqid('', true).'.'.$mimeType[1];
-            $result = Storage::disk('public')->put('images/mms/'.$fileName, $file);
+            $fileName = $this->getUploadedFileName($notification);
 
             Message::create([
                 'conversation_id' => $conversation->id,
@@ -125,7 +120,7 @@ class WhatsAppProcessWebhook extends ProcessWebhookJob
                 'is_unread' => true,
                 'service_message_id' => $notification->id(),
                 'message_type' => $mimeType[0],
-                'file_name' => ($fileName && $result) ? $fileName : null,
+                'file_name' => $fileName ?: null,
             ]);
 
             return;
@@ -145,5 +140,18 @@ class WhatsAppProcessWebhook extends ProcessWebhookJob
         }
 
         throw new WebhookException('Unknown message type');
+    }
+
+    public function getUploadedFileName($notification)
+    {
+        $media = $this->getMediaById($notification->imageId());
+        $file = Http::withToken($this->credentials->accessToken)->get($media->url);
+
+        return $this->uploadFile($file);
+    }
+
+    public function setRequestData(array $requestData): void
+    {
+        $this->requestData = $requestData;
     }
 }

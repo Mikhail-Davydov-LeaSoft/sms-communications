@@ -2,6 +2,7 @@
 
 namespace FmTod\SmsCommunications\Services;
 
+use FmTod\SmsCommunications\Concerns\MockableService;
 use FmTod\SmsCommunications\Contracts\ProcessesSMS;
 use FmTod\SmsCommunications\DataTransferObjects\MessageData;
 use FmTod\SmsCommunications\Exceptions\CouldNotSendMessage;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Http;
 
 class BryteCall implements ProcessesSMS
 {
+    use MockableService;
+
     private string $apiEndpoint;
 
     private string $dir_path;

@@ -2,6 +2,7 @@
 
 namespace FmTod\SmsCommunications\Services;
 
+use FmTod\SmsCommunications\Concerns\MockableService;
 use FmTod\SmsCommunications\Contracts\ProcessesSMS;
 use FmTod\SmsCommunications\DataTransferObjects\MessageData;
 use FmTod\SmsCommunications\Exceptions\CouldNotSendMessage;
@@ -17,7 +18,11 @@ use Vonage\Messages\MessageObjects\VideoObject;
 
 class Nexmo implements ProcessesSMS
 {
-    private \Vonage\Client $client;
+    use MockableService;
+
+    private \Vonage\Client $basicClient;
+
+    private \Vonage\Client $jwtClient;
 
     private \Vonage\Client\Credentials\Basic $basic;
 
@@ -28,7 +33,13 @@ class Nexmo implements ProcessesSMS
         $apiKey = $configuration->api_key;
         $api_secret = $configuration->api_secret;
         $this->basic = new \Vonage\Client\Credentials\Basic($apiKey, $api_secret);
-        $this->client = new \Vonage\Client($this->basic);
+        $keypair = new \Vonage\Client\Credentials\Keypair(
+            file_get_contents(storage_path('app/private.key')),
+            config('sms-communications.nexmo_app_id')
+        );
+
+        $this->basicClient = new \Vonage\Client($this->basic);
+        $this->jwtClient = new \Vonage\Client($keypair);
     }
 
     public function sendMessage(array $messageData)
@@ -43,7 +54,7 @@ class Nexmo implements ProcessesSMS
                 $this->message_type = 'text';
             } else {
                 // MMS
-                $this->client->messages()->send($this->getTypedMessage($messageData));
+                $this->jwtClient->messages()->send($this->getTypedMessage($messageData));
             }
         } catch (\Exception $e) {
             throw new CouldNotSendMessage('Message was not sent due to an error '.$e->getMessage(), $e);

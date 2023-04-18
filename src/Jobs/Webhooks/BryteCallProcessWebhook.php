@@ -83,4 +83,9 @@ class BryteCallProcessWebhook extends ProcessWebhookJob
         }
         $message->save();
     }
+
+    public function setRequestData(array $requestData): void
+    {
+        $this->requestData = $requestData;
+    }
 }

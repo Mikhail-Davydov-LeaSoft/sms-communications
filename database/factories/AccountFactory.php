@@ -28,7 +28,10 @@ class AccountFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->safeEmail(),
             'identifier' => fake()->text(8),
-            'credentials' => fake()->text(),
+            'credentials' => [
+                'accessToken' => fake()->text(82),
+                'phoneNumberId' => fake()->isbn13(),
+            ],
         ];
     }
 }
